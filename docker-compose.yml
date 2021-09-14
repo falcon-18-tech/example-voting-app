@@ -1,18 +1,15 @@
-services:
-  redis:
-    image: redis
-    volumes:
-      - redis_volume:/var/lib/redis/data
-    ports: ["6379"]
-    networks:
-      - back-tier
+# version is now using "compose spec"
+# v2 and v3 are now combined!
+# docker-compose v1.27+ required
 
-  voting-app:
-    image: voting-app
+services:
+  vote:
     build: ./vote
+    # use python rather than gunicorn for local dev
     command: python app.py
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy 
     volumes:
      - ./vote:/app
     ports:
@@ -21,44 +18,60 @@ services:
       - front-tier
       - back-tier
 
-  postgres:
-    image: postgres:9.4
-    container_name: postgres_db
-    environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-    volumes:
-      - "db_volume:/var/lib/postgresql/data"
-    networks:
-      - back-tier
-
-  result-app:
-    image: result-app
+  result:
     build: ./result
+    # use nodemon rather than node for local dev
     command: nodemon server.js
     depends_on:
-      - postgres 
+      db:
+        condition: service_healthy 
     volumes:
       - ./result:/app
     ports:
       - "5001:80"
+      - "5858:5858"
     networks:
       - front-tier
       - back-tier
 
-  worker-app:
-    image: worker-app
+  worker:
     build:
       context: ./worker
     depends_on:
-      - redis
-      - postgres
+      redis:
+        condition: service_healthy 
+      db:
+        condition: service_healthy 
+    networks:
+      - back-tier
+
+  redis:
+    image: redis:5.0-alpine3.10
+    volumes:
+      - "./healthchecks:/healthchecks"
+    healthcheck:
+      test: /healthchecks/redis.sh
+      interval: "5s"
+    ports: ["6379"]
+    networks:
+      - back-tier
+
+  db:
+    image: postgres:9.4
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+      - "./healthchecks:/healthchecks"
+    healthcheck:
+      test: /healthchecks/postgres.sh
+      interval: "5s"
     networks:
       - back-tier
 
 volumes:
-  redis_volume:
-  db_volume:
+  db-data:
 
 networks:
   front-tier:

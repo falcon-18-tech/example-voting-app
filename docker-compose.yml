@@ -4,8 +4,8 @@ services:
     volumes:
       - redis_volume:/var/lib/redis/data
     ports: ["6379"]
-#     networks:
-#       - back-tier
+    networks:
+      - back-tier
 
   voting-app:
     image: voting-app
@@ -17,9 +17,9 @@ services:
      - ./vote:/app
     ports:
       - "5000:80"
-#     networks:
-#       - front-tier
-#       - back-tier
+    networks:
+      - front-tier
+      - back-tier
 
   postgres:
     image: postgres:9.4
@@ -29,8 +29,8 @@ services:
       POSTGRES_PASSWORD: "postgres"
     volumes:
       - "db_volume:/var/lib/postgresql/data"
-#     networks:
-#       - back-tier
+    networks:
+      - back-tier
 
   result-app:
     image: result-app
@@ -42,9 +42,9 @@ services:
       - ./result:/app
     ports:
       - "5001:80"
-#     networks:
-#       - front-tier
-#       - back-tier
+    networks:
+      - front-tier
+      - back-tier
 
   worker-app:
     image: worker-app
@@ -53,13 +53,13 @@ services:
     depends_on:
       - redis
       - postgres
-#     networks:
-#       - back-tier
+    networks:
+      - back-tier
 
 volumes:
   redis_volume:
   db_volume:
 
-# networks:
-#   front-tier:
-#   back-tier:
+networks:
+  front-tier:
+  back-tier:

@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis
+    image:  redis:5.0-alpine3.10
     volumes:
       - redis_volume:/var/lib/redis/data
     ports: ["6379"]
